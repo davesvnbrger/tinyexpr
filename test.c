@@ -234,7 +234,7 @@ static void test_nans() {
         te_expr *n = te_compile(expr, 0, 0, &err);
         lok(n);
         lequal(err, 0);
-        const double c = te_eval(n);
+        const double c = te_eval(n, NULL);
         lok(c != c);
         te_free(n);
     }
@@ -268,7 +268,7 @@ static void test_infs() {
         te_expr *n = te_compile(expr, 0, 0, &err);
         lok(n);
         lequal(err, 0);
-        const double c = te_eval(n);
+        const double c = te_eval(n, NULL);
         lok(c == c + 1);
         te_free(n);
     }
@@ -278,10 +278,7 @@ static void test_infs() {
 static void test_variables() {
 
     static double x, y, test;
-    te_variable lookup[] =
-        {{"x", {&x}, TE_VARIABLE, NULL},
-         {"y", {&y}, TE_VARIABLE, NULL},
-         {"te_st", {&test}, TE_VARIABLE, NULL}};
+    te_variable lookup[] = { TE_VARIABLE("x", x), TE_VARIABLE("y", y), TE_VARIABLE("te_st", test) };
 
     int err;
 
@@ -305,17 +302,17 @@ static void test_variables() {
         for (x = 0; x < 5; ++x) {
             double ev;
 
-            ev = te_eval(expr1);
+            ev = te_eval(expr1, NULL);
             lfequal(ev, cos(x) + sin(y));
 
-            ev = te_eval(expr2);
+            ev = te_eval(expr2, NULL);
             lfequal(ev, x+x+x-y);
 
-            ev = te_eval(expr3);
+            ev = te_eval(expr3, NULL);
             lfequal(ev, x*y*y*y);
 
             test = x;
-            ev = te_eval(expr4);
+            ev = te_eval(expr4, NULL);
             lfequal(ev, x+5);
         }
     }
@@ -349,7 +346,7 @@ static void test_variables() {
 #define cross_check(a, b) do {\
     if ((b)!=(b)) break;\
     expr = te_compile((a), lookup, 2, &err);\
-    lfequal(te_eval(expr), (b));\
+    lfequal(te_eval(expr, NULL), (b));\
     lok(!err);\
     te_free(expr);\
 }while(0)
@@ -357,8 +354,7 @@ static void test_variables() {
 static void test_functions() {
 
     static double x, y;
-    te_variable lookup[] =
-        {{"x", {&x}, TE_VARIABLE, NULL}, {"y", {&y}, TE_VARIABLE, NULL}};
+    te_variable lookup[] = { TE_VARIABLE("x", x), TE_VARIABLE("y", y) };
 
     int err;
     te_expr *expr;
@@ -420,16 +416,16 @@ static void test_dynamic() {
 
     static double x, f;
     te_variable lookup[] = {
-        {"x", {&x}, TE_VARIABLE, NULL},
-        {"f", {&f}, TE_VARIABLE, NULL},
-        {"sum0", {.f0=sum0}, TE_FUNCTION0, NULL},
-        {"sum1", {.f1=sum1}, TE_FUNCTION1, NULL},
-        {"sum2", {.f2=sum2}, TE_FUNCTION2, NULL},
-        {"sum3", {.f3=sum3}, TE_FUNCTION3, NULL},
-        {"sum4", {.f4=sum4}, TE_FUNCTION4, NULL},
-        {"sum5", {.f5=sum5}, TE_FUNCTION5, NULL},
-        {"sum6", {.f6=sum6}, TE_FUNCTION6, NULL},
-        {"sum7", {.f7=sum7}, TE_FUNCTION7, NULL},
+        TE_VARIABLE("x", x),
+        TE_VARIABLE("f", f),
+        TE_FUNCTION("sum0", sum0, 0),
+        TE_FUNCTION("sum1", sum1, 1),
+        TE_FUNCTION("sum2", sum2, 2),
+        TE_FUNCTION("sum3", sum3, 3),
+        TE_FUNCTION("sum4", sum4, 4),
+        TE_FUNCTION("sum5", sum5, 5),
+        TE_FUNCTION("sum6", sum6, 6),
+        TE_FUNCTION("sum7", sum7, 7),
     };
 
     test_case cases[] = {
@@ -468,7 +464,7 @@ static void test_dynamic() {
         int err;
         te_expr *ex = te_compile(expr, lookup, sizeof(lookup)/sizeof(te_variable), &err);
         lok(ex);
-        lfequal(te_eval(ex), answer);
+        lfequal(te_eval(ex, NULL), answer);
         te_free(ex);
     }
 }
@@ -498,10 +494,10 @@ static void test_closure() {
     static double c[] = {5,6,7,8,9};
 
     te_variable lookup[] = {
-      {"c0", {.cl0=clo0}, TE_CLOSURE0, &extra},
-      {"c1", {.cl1=clo1}, TE_CLOSURE1, &extra},
-      {"c2", {.cl2=clo2}, TE_CLOSURE2, &extra},
-      {"cell", {.cl1=cell}, TE_CLOSURE1, c},
+      TE_CLOSURE("c0", clo0, 0, &extra),
+      TE_CLOSURE("c1", clo1, 1, &extra),
+      TE_CLOSURE("c2", clo2, 2, &extra),
+      TE_CLOSURE("cell", cell, 1, c),
     };
 
     test_case cases[] = {
@@ -520,10 +516,10 @@ static void test_closure() {
         lok(ex);
 
         extra = 0;
-        lfequal(te_eval(ex), answer + extra);
+        lfequal(te_eval(ex, NULL), answer + extra);
 
         extra = 10;
-        lfequal(te_eval(ex), answer + extra);
+        lfequal(te_eval(ex, NULL), answer + extra);
 
         te_free(ex);
     }
@@ -543,7 +539,7 @@ static void test_closure() {
         int err;
         te_expr *ex = te_compile(expr, lookup, sizeof(lookup)/sizeof(te_variable), &err);
         lok(ex);
-        lfequal(te_eval(ex), answer);
+        lfequal(te_eval(ex, NULL), answer);
         te_free(ex);
     }
 }
@@ -569,7 +565,7 @@ static void test_optimize() {
         /* The answer should be know without
          * even running eval. */
         lfequal(ex->v.value, answer);
-        lfequal(te_eval(ex), answer);
+        lfequal(te_eval(ex, NULL), answer);
 
         te_free(ex);
     }
@@ -604,10 +600,7 @@ static void test_pow() {
 
     static double a = 2, b = 3;
 
-    te_variable lookup[] = {
-      {"a", {&a}, TE_VARIABLE, NULL},
-      {"b", {&b}, TE_VARIABLE, NULL}
-    };
+    te_variable lookup[] = { TE_VARIABLE("a", a), TE_VARIABLE("b", b) };
 
     size_t i;
     for (i = 0; i < sizeof(cases) / sizeof(test_equ); ++i) {
@@ -620,8 +613,8 @@ static void test_pow() {
         lok(ex1);
         lok(ex2);
 
-        double r1 = te_eval(ex1);
-        double r2 = te_eval(ex2);
+        double r1 = te_eval(ex1, NULL);
+        double r2 = te_eval(ex2, NULL);
 
         fflush(stdout);
         lfequal(r1, r2);

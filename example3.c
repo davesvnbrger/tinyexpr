@@ -12,9 +12,8 @@ static double my_sum(double a, double b) {
 int main(int argc, char *argv[])
 {
     (void)argc; (void)argv;
-    te_variable vars[] = {
-      {"mysum", {.f2=my_sum}, TE_FUNCTION2, NULL}
-    };
+    int ret = 0;
+    te_variable vars[] = { TE_FUNCTION("mysum", my_sum, 2) };
 
     const char *expression = "mysum(5, 6)";
     printf("Evaluating:\n\t%s\n", expression);
@@ -23,14 +22,24 @@ int main(int argc, char *argv[])
     te_expr *n = te_compile(expression, vars, 1, &err);
 
     if (n) {
-        const double r = te_eval(n);
+      const double r = te_eval(n, NULL);
+      const double expected_res = 11;
         printf("Result:\n\t%f\n", r);
-        te_free(n);
+        if (r != expected_res) {
+          printf("Expected result was: %f\n", expected_res);
+          goto error;
+        }
     } else {
-        /* Show the user where the error is at. */
+        /* Show the user where the parsing error is. */
         printf("\t%*s^\nError near here", err-1, "");
+        goto error;
     }
 
+  exit:
+    if (n) te_free(n);
+    return ret;
 
-    return 0;
+  error:
+    ret = 1; /* Don't return OK if not! */
+    goto exit;
 }

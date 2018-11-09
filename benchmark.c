@@ -41,7 +41,7 @@ static void bench(const char *expr, function1 func) {
     static double tmp;
     clock_t start;
 
-    te_variable lk = {"a", {&tmp}, TE_VARIABLE, NULL};
+    te_variable lk = TE_VARIABLE("a", tmp);
 
     printf("Expression: %s\n", expr);
 
@@ -72,7 +72,7 @@ static void bench(const char *expr, function1 func) {
     for (j = 0; j < loops; ++j)
         for (i = 0; i < loops; ++i) {
             tmp = i;
-            d += te_eval(n);
+            d += te_eval(n, NULL);
         }
     const long int eelapsed = (clock() - start) * 1000 / CLOCKS_PER_SEC;
     te_free(n);

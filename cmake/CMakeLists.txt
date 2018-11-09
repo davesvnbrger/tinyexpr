@@ -52,25 +52,26 @@ set_target_properties(tinyexpr PROPERTIES
 # Define tests
 ################################################################################
 if(NOT LIB_ONLY)
+
+  # Build benchmark (not included in the test suite)
   add_executable(bench ${TINYEXPR_SOURCE_DIR}/benchmark.c)
   target_link_libraries(bench tinyexpr ${MATH_LIB})
 
-  add_executable(example ${TINYEXPR_SOURCE_DIR}/example.c)
-  target_link_libraries(example tinyexpr ${MATH_LIB})
-  add_test(example example)
+  function(build_test _name)
+    add_executable(${_name} ${TINYEXPR_SOURCE_DIR}/${_name}.c)
+    target_link_libraries(${_name} ${MATH_LIB})
+    set(_libraries ${ARGN})
+    foreach(_lib ${_libraries})
+      target_link_libraries(${_name} ${_lib})
+    endforeach()
+  endfunction()
 
-  add_executable(example2 ${TINYEXPR_SOURCE_DIR}/example2.c)
-  target_link_libraries(example2 tinyexpr ${MATH_LIB})
-  add_test(example2 example2)
-
-  add_executable(example3 ${TINYEXPR_SOURCE_DIR}/example3.c)
-  target_link_libraries(example3 tinyexpr ${MATH_LIB})
-  add_test(example3 example3)
-
-  add_executable(test_pow_left ${TINYEXPR_SOURCE_DIR}/test.c)
-  target_link_libraries(test_pow_left tinyexpr ${MATH_LIB})
-  add_test(test_pow_left test_pow_left)
-
+  function(new_test _name)
+    build_test(${_name} ${ARGN})
+    add_test(${_name} ${_name})
+  endfunction()
+  
+  # create files variants
   file(READ ${TINYEXPR_SOURCE_DIR}/tinyexpr.c tinyexpr_c_file_content)
   file(WRITE ${PROJECT_BINARY_DIR}/tinyexpr_pow_right.c
 "#define TE_POW_FROM_RIGHT 1
@@ -78,18 +79,28 @@ if(NOT LIB_ONLY)
 ${tinyexpr_c_file_content}")
 
   file(READ ${TINYEXPR_SOURCE_DIR}/test.c test_c_file_content)
-  file(WRITE ${PROJECT_BINARY_DIR}/test_pow_right.c
+  file(WRITE ${TINYEXPR_SOURCE_DIR}/test_pow_left.c "${test_c_file_content}")
+  file(WRITE ${TINYEXPR_SOURCE_DIR}/test_pow_right.c
 "#define TE_POW_FROM_RIGHT 1
 #define TE_NAT_LOG 1
 ${test_c_file_content}")
 
+  # create tinyexpr lib variant
   ADD_LIBRARY(tinyexpr_pow_right STATIC
     ${PROJECT_BINARY_DIR}/tinyexpr_pow_right.c ${TINYEXPR_SOURCE_DIR}/tinyexpr.h)
   target_compile_features(tinyexpr_pow_right PUBLIC c_std_99)
   set_target_properties(tinyexpr_pow_right PROPERTIES VERSION ${VERSION})
 
-  add_executable(test_pow_right ${PROJECT_BINARY_DIR}/test_pow_right.c)
-  add_dependencies(test_pow_right tinyexpr_pow_right)
-  target_link_libraries(test_pow_right tinyexpr_pow_right ${MATH_LIB})
-  add_test(test_pow_right test_pow_right)
+  # tests
+  new_test(example tinyexpr)
+  build_test(example2 tinyexpr)
+  add_test(example2_347 example2 "x+y" 3 4 7)
+  add_test(example2_310 example2 "-5+x+2*y" 3 1 0)
+  build_test(example2off tinyexpr)
+  add_test(example2off_347 example2 "x+y" 3 4 7)
+  add_test(example2off_310 example2 "-5+x+2*y" 3 1 0)
+  new_test(example3 tinyexpr)
+  new_test(test_pow_left tinyexpr)
+  new_test(test_pow_right tinyexpr_pow_right)
+
 endif(NOT LIB_ONLY)

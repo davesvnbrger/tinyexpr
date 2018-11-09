@@ -25,36 +25,47 @@
 #ifndef __TINYEXPR_H__
 #define __TINYEXPR_H__
 
+/* Helper macro to be used when defining a te_variable */
+#define TE_VARIABLE(Name, Var) {(Name), {.var=&(Var)}, TE_VARIABLE, NULL}
+#define TE_OFFSET(Name, Offset) {(Name), {.offset=(Offset)}, TE_OFFSET, NULL}
+#define TE_FUNCTION(Name, Fun, Arity) {(Name), {.f##Arity=(Fun)}, TE_FUNCTION##Arity, NULL}
+#define TE_CLOSURE(Name, Closure, Arity, Ctx) {(Name), {.cl##Arity=(Closure)}, TE_CLOSURE##Arity, (Ctx)}
+
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define FUN_TYPES \
+  void *any;\
+  double(*f0)(void);\
+  double(*f1)(double);\
+  double(*f2)(double, double);\
+  double(*f3)(double, double, double);\
+  double(*f4)(double, double, double, double);\
+  double(*f5)(double, double, double, double, double);\
+  double(*f6)(double, double, double, double, double, double);\
+  double(*f7)(double, double, double, double, double, double, double);\
+  double(*cl0)(void*);\
+  double(*cl1)(void*, double);\
+  double(*cl2)(void*, double, double);\
+  double(*cl3)(void*, double, double, double);\
+  double(*cl4)(void*, double, double, double, double);\
+  double(*cl5)(void*, double, double, double, double, double);\
+  double(*cl6)(void*, double, double, double, double, double, double);\
+  double(*cl7)(void*, double, double, double, double, double, double, double)
 
 union fun {
-    void *any;
-    double (*f0)(void);
-    double (*f1)(double);
-    double (*f2)(double,double);
-    double (*f3)(double,double,double);
-    double (*f4)(double,double,double,double);
-    double (*f5)(double,double,double,double,double);
-    double (*f6)(double,double,double,double,double,double);
-    double (*f7)(double,double,double,double,double,double,double);
-    double (*cl0)(void*);
-    double (*cl1)(void*,double);
-    double (*cl2)(void*,double,double);
-    double (*cl3)(void*,double,double,double);
-    double (*cl4)(void*,double,double,double,double);
-    double (*cl5)(void*,double,double,double,double,double);
-    double (*cl6)(void*,double,double,double,double,double,double);
-    double (*cl7)(void*,double,double,double,double,double,double,double);
+  FUN_TYPES;
 };
   
 union value {
-    double value;
-    const double *bound;
-    union fun f;
+  FUN_TYPES;
+  double value;
+  const double *var;
+  size_t offset;
+  const double *bound;
 };
 
 typedef struct te_expr {
@@ -66,6 +77,7 @@ typedef struct te_expr {
 
 enum {
     TE_VARIABLE = 0,
+    TE_OFFSET = 1,
 
     TE_FUNCTION0 = 8, TE_FUNCTION1, TE_FUNCTION2, TE_FUNCTION3,
     TE_FUNCTION4, TE_FUNCTION5, TE_FUNCTION6, TE_FUNCTION7,
@@ -73,12 +85,12 @@ enum {
     TE_CLOSURE0 = 16, TE_CLOSURE1, TE_CLOSURE2, TE_CLOSURE3,
     TE_CLOSURE4, TE_CLOSURE5, TE_CLOSURE6, TE_CLOSURE7,
 
-    TE_FLAG_PURE = 32
+    TE_FLAG_PURE = 64
 };
 
 typedef struct te_variable {
     const char *name;
-    const union fun address;
+    const union value v;
     int type;
     void *context;
 } te_variable;
@@ -94,7 +106,7 @@ double te_interp(const char *expression, int *error);
 te_expr *te_compile(const char *expression, const te_variable *variables, int var_count, int *error);
 
 /* Evaluates the expression. */
-double te_eval(const te_expr *n);
+double te_eval(const te_expr *n, const void* base_addr);
 
 /* Prints debugging information on the syntax tree. */
 void te_print(const te_expr *n);

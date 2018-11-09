@@ -47,7 +47,7 @@ TinyExpr defines only four functions:
 ```C
     double te_interp(const char *expression, int *error);
     te_expr *te_compile(const char *expression, const te_variable *variables, int var_count, int *error);
-    double te_eval(const te_expr *expr);
+    double te_eval(const te_expr *expr, const void* base_addr);
     void te_free(te_expr *expr);
 ```
 
@@ -75,12 +75,12 @@ of the parse error on failure, and set `*error` to 0 on success.
 ## te_compile, te_eval, te_free
 ```C
     te_expr *te_compile(const char *expression, const te_variable *lookup, int lookup_len, int *error);
-    double te_eval(const te_expr *n);
+    double te_eval(const te_expr *n, const void* base_addr);
     void te_free(te_expr *n);
 ```
 
 Give `te_compile()` an expression with unbound variables and a list of
-variable names and pointers. `te_compile()` will return a `te_expr*` which can
+variable names and pointers/offsets. `te_compile()` will return a `te_expr*` which can
 be evaluated later using `te_eval()`. On failure, `te_compile()` will return 0
 and optionally set the passed in `*error` to the location of the parse error.
 
@@ -88,7 +88,10 @@ You may also compile expressions without variables by passing `te_compile()`'s s
 and thrid arguments as 0.
 
 Give `te_eval()` a `te_expr*` from `te_compile()`. `te_eval()` will evaluate the expression
-using the current variable values.
+using the current variable values. If any of the variables are defined by offset the offset is
+understood as being relative to this base_addr. This allows concurent threads calling `te_eval()`
+on the same `te_expr*` to use their own data by defining all the variables by offset and by
+providing by-thread data through base_addr. If no variable is defined by offset base_addr can be 0.
 
 After you're finished, make sure to call `te_free()`.
 
@@ -97,7 +100,7 @@ After you're finished, make sure to call `te_free()`.
 ```C
     double x, y;
     /* Store variable names and pointers. */
-    te_variable vars[] = {{"x", &x}, {"y", &y}};
+    te_variable vars[] = { TE_VARIABLE("x", x), TE_VARIABLE("y", y) };
 
     int err;
     /* Compile the expression with variables. */
@@ -105,10 +108,10 @@ After you're finished, make sure to call `te_free()`.
 
     if (expr) {
         x = 3; y = 4;
-        const double h1 = te_eval(expr); /* Returns 5. */
+        const double h1 = te_eval(expr, NULL); /* Returns 5. */
 
         x = 5; y = 12;
-        const double h2 = te_eval(expr); /* Returns 13. */
+        const double h2 = te_eval(expr, NULL); /* Returns 13. */
 
         te_free(expr);
     } else {
@@ -139,7 +142,7 @@ line. It also does error checking and binds the variables `x` and `y` to *3* and
         /* This shows an example where the variables
          * x and y are bound at eval-time. */
         double x, y;
-        te_variable vars[] = {{"x", &x}, {"y", &y}};
+        te_variable vars[] = { TE_VARIABLE("x", x), TE_VARIABLE("y", y) };
 
         /* This will compile the expression and check for errors. */
         int err;
@@ -150,7 +153,88 @@ line. It also does error checking and binds the variables `x` and `y` to *3* and
              * times as you like. This is fairly efficient because the parsing has
              * already been done. */
             x = 3; y = 4;
-            const double r = te_eval(n); printf("Result:\n\t%f\n", r);
+            const double r = te_eval(n, NULL); printf("Result:\n\t%f\n", r);
+            te_free(n);
+        } else {
+            /* Show the user where the error is at. */
+            printf("\t%*s^\nError near here", err-1, "");
+        }
+
+        return 0;
+    }
+```
+
+
+This produces the output:
+
+    $ example2 "sqrt(x^2+y2)"
+        Evaluating:
+                sqrt(x^2+y2)
+                          ^
+        Error near here
+
+
+    $ example2 "sqrt(x^2+y^2)"
+        Evaluating:
+                sqrt(x^2+y^2)
+        Result:
+                5.000000
+
+## Same Example using offsets
+
+Here is a complete example that will evaluate an expression passed in from the command
+line. It also does error checking and binds the variables `x` and `y` to *3* and *4*, respectively.
+
+```C
+    #include "tinyexpr.h"
+    #include <stdio.h>
+    #include <stddef.h>
+    #include <assert.h>
+
+    struct my_data {
+      char c;
+      double y;
+      int b;
+      double x;
+    };
+    
+    int main(int argc, char *argv[])
+    {
+        if (argc < 2) {
+            printf("Usage: example2 \"expression\"\n");
+            return 0;
+        }
+
+        const char *expression = argv[1];
+        printf("Evaluating:\n\t%s\n", expression);
+
+        /* This shows an example where the variables
+         * x and y are bound at eval-time using their offset and a base_addr.
+         * Such variables have not to exist at compile time. */
+        te_variable vars[] = { TE_OFFSET("x", offsetof(struct my_data, x)),
+            TE_OFFSET("y", offsetof(struct my_data, y)) };
+
+        /* This will compile the expression and check for errors. */
+        int err;
+        te_expr *n = te_compile(expression, vars, 2, &err);
+
+        if (n) {
+            /* The actual data could be allocated after expression compile-time.
+             * This allows to call the same compiled expression on different data,
+             * possibly by-thread data. */
+            struct my_data d1;
+            /* The variables can be changed here, and eval can be called as many
+             * times as you like. This is fairly efficient because the parsing has
+             * already been done. */
+            d1.x = 3; d1.y = 4;
+            const double r1 = te_eval(n, &d1);
+            printf("Result:\n\t%f\n", r1);
+            
+            struct my_data d2;
+            d2.x = d1.x; d2.y = d1.y;
+            const double r1 = te_eval(n, &d2);
+            assert(r1 == r2); (void)r2;
+            
             te_free(n);
         } else {
             /* Show the user where the error is at. */
@@ -189,7 +273,7 @@ double my_sum(double a, double b) {
 }
 
 te_variable vars[] = {
-    {"mysum", my_sum, TE_FUNCTION2} /* TE_FUNCTION2 used because my_sum takes two arguments. */
+    TE_FUNCTION("mysum", my_sum, 2) /* my_sum takes two arguments. */
 };
 
 te_expr *n = te_compile("mysum(5, 6)", vars, 1, 0);
@@ -210,8 +294,8 @@ the compiled expression returned by `te_compile()` would become:
 
 ![example syntax tree](doc/e2.png?raw=true)
 
-`te_eval()` will automatically load in any variables by their pointer, and then evaluate
-and return the result of the expression.
+`te_eval()` will automatically load in any variables by their pointer or base_addr+offset,
+and then evaluate and return the result of the expression.
 
 `te_free()` should always be called when you're done with the compiled expression.
 
