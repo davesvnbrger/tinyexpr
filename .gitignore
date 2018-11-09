@@ -1,0 +1,12 @@
+CMakeCache.txt
+CMakeFiles
+tmp
+[Bb]uild*
+*.sw[po]
+*.[ao]
+*~
+*.obj
+tags
+#*#
+*pow*.c
+*.exe
