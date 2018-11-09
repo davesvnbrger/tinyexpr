@@ -49,6 +49,7 @@ set_target_properties(tinyexpr PROPERTIES
 if(CMAKE_COMPILER_IS_GNUCC)
   set_target_properties(tinyexpr PROPERTIES COMPILE_FLAGS "-std=c99")
 endif()
+target_link_libraries(tinyexpr ${MATH_LIB})
 
 ################################################################################
 # Define tests
@@ -61,10 +62,11 @@ if(NOT LIB_ONLY)
 
   function(build_test _name)
     add_executable(${_name} ${TINYEXPR_SOURCE_DIR}/${_name}.c)
-    target_link_libraries(${_name} ${MATH_LIB})
     if(CMAKE_COMPILER_IS_GNUCC)
       set_target_properties(${_name} PROPERTIES COMPILE_FLAGS "-std=c99")
+      set(MATH_LIB m)
     endif()
+    target_link_libraries(${_name} ${MATH_LIB})
     set(_libraries ${ARGN})
     foreach(_lib ${_libraries})
       target_link_libraries(${_name} ${_lib})
@@ -97,6 +99,7 @@ ${test_c_file_content}")
   if(CMAKE_COMPILER_IS_GNUCC)
     set_target_properties(tinyexpr_pow_right PROPERTIES COMPILE_FLAGS "-std=c99")
   endif()
+  target_link_libraries(tinyexpr_pow_right ${MATH_LIB})
 
   # tests
   new_test(example tinyexpr)

@@ -25,6 +25,8 @@
 #ifndef __TINYEXPR_H__
 #define __TINYEXPR_H__
 
+#include <stddef.h>
+
 /* Helper macro to be used when defining a te_variable */
 #define TE_VARIABLE(Name, Var) {(Name), {.var=&(Var)}, TE_VARIABLE, NULL}
 #define TE_OFFSET(Name, Offset) {(Name), {.offset=(Offset)}, TE_OFFSET, NULL}
