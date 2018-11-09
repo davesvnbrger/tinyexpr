@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.0)
 project(tinyexpr C)
 enable_testing()
 
@@ -43,10 +43,12 @@ endif()
 
 ADD_LIBRARY(tinyexpr STATIC
   ${TINYEXPR_SOURCE_DIR}/tinyexpr.c ${TINYEXPR_SOURCE_DIR}/tinyexpr.h)
-target_compile_features(tinyexpr PUBLIC c_std_99)
 set_target_properties(tinyexpr PROPERTIES
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})
+if(CMAKE_COMPILER_IS_GNUCC)
+  set_target_properties(tinyexpr PROPERTIES COMPILE_FLAGS "-std=c99")
+endif()
 
 ################################################################################
 # Define tests
@@ -60,6 +62,9 @@ if(NOT LIB_ONLY)
   function(build_test _name)
     add_executable(${_name} ${TINYEXPR_SOURCE_DIR}/${_name}.c)
     target_link_libraries(${_name} ${MATH_LIB})
+    if(CMAKE_COMPILER_IS_GNUCC)
+      set_target_properties(${_name} PROPERTIES COMPILE_FLAGS "-std=c99")
+    endif()
     set(_libraries ${ARGN})
     foreach(_lib ${_libraries})
       target_link_libraries(${_name} ${_lib})
@@ -88,8 +93,10 @@ ${test_c_file_content}")
   # create tinyexpr lib variant
   ADD_LIBRARY(tinyexpr_pow_right STATIC
     ${PROJECT_BINARY_DIR}/tinyexpr_pow_right.c ${TINYEXPR_SOURCE_DIR}/tinyexpr.h)
-  target_compile_features(tinyexpr_pow_right PUBLIC c_std_99)
   set_target_properties(tinyexpr_pow_right PROPERTIES VERSION ${VERSION})
+  if(CMAKE_COMPILER_IS_GNUCC)
+    set_target_properties(tinyexpr_pow_right PROPERTIES COMPILE_FLAGS "-std=c99")
+  endif()
 
   # tests
   new_test(example tinyexpr)
