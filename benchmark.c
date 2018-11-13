@@ -25,18 +25,19 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
+#include <stdlib.h>
 #include "tinyexpr.h"
 
 
 
-#define loops 10000
+#define default_loops 100000000
 
 
 
 typedef double (*function1)(double);
 
-static void bench(const char *expr, function1 func) {
-    int i, j;
+static void bench(const char *expr, function1 func, int count) {
+    int i;
     volatile double d;
     static double tmp;
     clock_t start;
@@ -45,42 +46,40 @@ static void bench(const char *expr, function1 func) {
 
     printf("Expression: %s\n", expr);
 
-    printf("native ");
+    printf("native: ");
     start = clock();
     d = 0;
-    for (j = 0; j < loops; ++j)
-        for (i = 0; i < loops; ++i) {
-            tmp = i;
-            d += func(tmp);
-        }
+    for (i = 0; i < count; ++i) {
+        tmp = i;
+        d += func(tmp);
+    }
     const long int nelapsed = (clock() - start) * 1000 / CLOCKS_PER_SEC;
 
     /*Million floats per second input.*/
-    printf(" %.5g", d);
+    printf("%.8g", d);
     if (nelapsed)
-        printf("\t%5ldms\t%5ldmfps\n", nelapsed, loops * loops / nelapsed / 1000);
+        printf("\t%5ldms\t%5ldmfps\n", nelapsed, count / nelapsed / 1000);
     else
         printf("\tinf\n");
 
 
 
 
-    printf("interp ");
+    printf("interp: ");
     te_expr *n = te_compile(expr, &lk, 1, 0);
     start = clock();
     d = 0;
-    for (j = 0; j < loops; ++j)
-        for (i = 0; i < loops; ++i) {
-            tmp = i;
-            d += te_eval(n, NULL);
-        }
+    for (i = 0; i < count; ++i) {
+        tmp = i;
+        d += te_eval(n, NULL);
+    }
     const long int eelapsed = (clock() - start) * 1000 / CLOCKS_PER_SEC;
     te_free(n);
 
     /*Million floats per second input.*/
-    printf(" %.5g", d);
+    printf(" %.8g", d);
     if (eelapsed)
-        printf("\t%5ldms\t%5ldmfps\n", eelapsed, loops * loops / eelapsed / 1000);
+        printf("\t%5ldms\t%5ldmfps\n", eelapsed, count / eelapsed / 1000);
     else
         printf("\tinf\n");
 
@@ -114,12 +113,18 @@ static double al(double a) {
 
 int main(int argc, char *argv[])
 {
-    (void)argc; (void)argv;
-    bench("sqrt(a^1.5+a^2.5)", as);
-    bench("a+5", a5);
-    bench("a+(5*2)", a10);
-    bench("(a+5)*2", a52);
-    bench("(1/(a+1)+2/(a+2)+3/(a+3))", al);
+    int count = default_loops;
+    if (argc == 2)
+      count = atoi(argv[1]);
+    if (count <= 0) {
+      printf("Usage: %s [count]\n", argv[0]);
+      return 1;
+    }
+    bench("sqrt(a^1.5+a^2.5)", as, count);
+    bench("a+5", a5, count);
+    bench("a+(5*2)", a10, count);
+    bench("(a+5)*2", a52, count);
+    bench("(1/(a+1)+2/(a+2)+3/(a+3))", al, count);
 
     return 0;
 }

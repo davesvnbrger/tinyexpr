@@ -56,10 +56,6 @@ target_link_libraries(tinyexpr ${MATH_LIB})
 ################################################################################
 if(NOT LIB_ONLY)
 
-  # Build benchmark (not included in the test suite)
-  add_executable(bench ${TINYEXPR_SOURCE_DIR}/benchmark.c)
-  target_link_libraries(bench tinyexpr ${MATH_LIB})
-
   function(build_test _name)
     add_executable(${_name} ${TINYEXPR_SOURCE_DIR}/${_name}.c)
     if(CMAKE_COMPILER_IS_GNUCC)
@@ -112,5 +108,7 @@ ${test_c_file_content}")
   new_test(example3 tinyexpr)
   new_test(test_pow_left tinyexpr)
   new_test(test_pow_right tinyexpr_pow_right)
+  build_test(benchmark tinyexpr)
+  add_test(benchmark_100 benchmark 100)
 
 endif(NOT LIB_ONLY)
