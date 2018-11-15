@@ -326,15 +326,17 @@ static void next_token(state *s) {
                     case '^': s->type = TOK_INFIX; s->v.f2 = pow; break;
                     case '%': s->type = TOK_INFIX; s->v.f2 = fmod; break;
                     case '>': s->type = TOK_INFIX;
-                      s->v.f2 = next_if(s, '=') ?  is_ge : is_gt; break;
+                        s->v.f2 = next_if(s, '=') ?  is_ge : is_gt; break;
                     case '<': s->type = TOK_INFIX;
-                      s->v.f2 = next_if(s, '=') ? is_le : is_lt; break;
+                        s->v.f2 = next_if(s, '=') ? is_le : is_lt; break;
                     case '=': s->type = TOK_INFIX;
-                      /* The only valid char after = is = */
-                      s->v.f2 = next_if(s, '=') ? is_eq : (s->type = TOK_ERROR, 0); break;
+                        /* The only valid char after = is = */
+                        if (next_if(s, '=')) s->v.f2 = is_eq; else s->type = TOK_ERROR;
+                        break;
                     case '!': s->type = TOK_INFIX;
-                      /* The only valid char after ! is = */
-                      s->v.f2 = next_if(s, '=') ? is_neq : (s->type = TOK_ERROR, 0); break;
+                        /* The only valid char after ! is = */
+                        if (next_if(s, '=')) s->v.f2 = is_neq; else s->type = TOK_ERROR;
+                        break;
                     case '(': s->type = TOK_OPEN; break;
                     case ')': s->type = TOK_CLOSE; break;
                     case ',': s->type = TOK_SEP; break;
