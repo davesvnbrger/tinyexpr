@@ -36,6 +36,7 @@ For log = natural log uncomment the next line. */
 
 #include "tinyexpr.h"
 #include <stdlib.h>
+#define _USE_MATH_DEFINES /* To have M_PI and M_E on Windows */
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -138,9 +139,6 @@ void te_free(te_expr *n) {
     free(n);
 }
 
-
-static double pi(void) {return 3.14159265358979323846;}
-static double e(void) {return 2.71828182845904523536;}
 static double fac(double a) {/* simplest version of fac */
     if (a < 0.0)
         return NAN;
@@ -187,7 +185,7 @@ static const te_variable functions[] = {
       TE_FUNCTION3 | TE_CONDITION | TE_FLAG_PURE, 0},
     {"cos", {.f1=cos}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"cosh", {.f1=cosh}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
-    {"e", {.f0=e}, TE_FUNCTION0 | TE_FLAG_PURE, 0},
+    {"e", {.value = M_E}, TE_CONSTANT, 0},
     {"exp", {.f1=exp}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"fac", {.f1=fac}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"floor", {.f1=floor_}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
@@ -200,7 +198,7 @@ static const te_variable functions[] = {
     {"log10", {.f1=log10}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"ncr", {.f2=ncr}, TE_FUNCTION2 | TE_FLAG_PURE, 0},
     {"npr", {.f2=npr}, TE_FUNCTION2 | TE_FLAG_PURE, 0},
-    {"pi", {.f0=pi}, TE_FUNCTION0 | TE_FLAG_PURE, 0},
+    {"pi", {.value=M_PI}, TE_CONSTANT, 0},
     {"pow", {.f2=pow}, TE_FUNCTION2 | TE_FLAG_PURE, 0},
     {"sin", {.f1=sin}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"sinh", {.f1=sinh}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
@@ -304,6 +302,11 @@ static void next_token(state *s) {
                           s->v.offset = var->v.offset;
                           break;
 
+                        case TE_CONSTANT:
+                          s->type = TE_CONSTANT;
+                          s->v.value = var->v.value;
+                          break;
+
                         case TE_CLOSURE0: case TE_CLOSURE1: case TE_CLOSURE2: case TE_CLOSURE3:         /* Falls through. */
                         case TE_CLOSURE4: case TE_CLOSURE5: case TE_CLOSURE6: case TE_CLOSURE7:         /* Falls through. */
                             s->context = var->context;                                                  /* Falls through. */
@@ -374,6 +377,12 @@ static te_expr *base(state *s) {
         case TOK_OFFSET:
           ret = new_expr(TE_OFFSET, 0);
           ret->v.offset = s->v.offset;
+          next_token(s);
+          break;
+
+        case TE_CONSTANT:
+          ret = new_expr(TE_CONSTANT, 0);
+          ret->v.value = s->v.value;
           next_token(s);
           break;
 

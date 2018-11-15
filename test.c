@@ -291,7 +291,7 @@ static void test_infs() {
 static void test_variables() {
 
     static double x, y, test;
-    te_variable lookup[] = { TE_VARIABLE("x", x), TE_VARIABLE("y", y), TE_VARIABLE("te_st", test) };
+    te_variable lookup[] = { TE_DEF_VARIABLE("x", x), TE_DEF_VARIABLE("y", y), TE_DEF_VARIABLE("te_st", test) };
 
     int err;
 
@@ -367,7 +367,7 @@ static void test_variables() {
 static void test_functions() {
 
     static double x, y;
-    te_variable lookup[] = { TE_VARIABLE("x", x), TE_VARIABLE("y", y) };
+    te_variable lookup[] = { TE_DEF_VARIABLE("x", x), TE_DEF_VARIABLE("y", y) };
 
     int err;
     te_expr *expr;
@@ -431,16 +431,16 @@ static void test_dynamic() {
 
     static double x, f;
     te_variable lookup[] = {
-        TE_VARIABLE("x", x),
-        TE_VARIABLE("f", f),
-        TE_FUNCTION("sum0", sum0, 0),
-        TE_FUNCTION("sum1", sum1, 1),
-        TE_FUNCTION("sum2", sum2, 2),
-        TE_FUNCTION("sum3", sum3, 3),
-        TE_FUNCTION("sum4", sum4, 4),
-        TE_FUNCTION("sum5", sum5, 5),
-        TE_FUNCTION("sum6", sum6, 6),
-        TE_FUNCTION("sum7", sum7, 7),
+        TE_DEF_VARIABLE("x", x),
+        TE_DEF_VARIABLE("f", f),
+        TE_DEF_CONSTANT("sum0", 6),
+        TE_DEF_FUNCTION("sum1", sum1, 1),
+        TE_DEF_FUNCTION("sum2", sum2, 2),
+        TE_DEF_FUNCTION("sum3", sum3, 3),
+        TE_DEF_FUNCTION("sum4", sum4, 4),
+        TE_DEF_FUNCTION("sum5", sum5, 5),
+        TE_DEF_FUNCTION("sum6", sum6, 6),
+        TE_DEF_FUNCTION("sum7", sum7, 7),
     };
 
     test_case cases[] = {
@@ -451,9 +451,6 @@ static void test_dynamic() {
         {"f+f", 10},
         {"f+sum0", 11},
         {"sum0+sum0", 12},
-        {"sum0()+sum0", 12},
-        {"sum0+sum0()", 12},
-        {"sum0()+(0)+sum0()", 12},
         {"sum1 sum0", 12},
         {"sum1(sum0)", 12},
         {"sum1 f", 10},
@@ -509,10 +506,10 @@ static void test_closure() {
     static double c[] = {5,6,7,8,9};
 
     te_variable lookup[] = {
-      TE_CLOSURE("c0", clo0, 0, &extra),
-      TE_CLOSURE("c1", clo1, 1, &extra),
-      TE_CLOSURE("c2", clo2, 2, &extra),
-      TE_CLOSURE("cell", cell, 1, c),
+      TE_DEF_CLOSURE("c0", clo0, 0, &extra),
+      TE_DEF_CLOSURE("c1", clo1, 1, &extra),
+      TE_DEF_CLOSURE("c2", clo2, 2, &extra),
+      TE_DEF_CLOSURE("cell", cell, 1, c),
     };
 
     test_case cases[] = {
@@ -615,7 +612,7 @@ static void test_pow() {
 
     static double a = 2, b = 3;
 
-    te_variable lookup[] = { TE_VARIABLE("a", a), TE_VARIABLE("b", b) };
+    te_variable lookup[] = { TE_DEF_VARIABLE("a", a), TE_DEF_VARIABLE("b", b) };
 
     size_t i;
     for (i = 0; i < sizeof(cases) / sizeof(test_equ); ++i) {

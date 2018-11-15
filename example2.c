@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 
     /* This shows an example where the variables
      * x and y are bound at eval-time. */
-    te_variable vars[]= { TE_VARIABLE("x", x), TE_VARIABLE("y", y) };
+    te_variable vars[]= { TE_DEF_VARIABLE("x", x), TE_DEF_VARIABLE("y", y) };
 
     /* This will compile the expression and check for errors. */
     int err;

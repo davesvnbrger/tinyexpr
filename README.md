@@ -100,7 +100,7 @@ After you're finished, make sure to call `te_free()`.
 ```C
     double x, y;
     /* Store variable names and pointers. */
-    te_variable vars[] = { TE_VARIABLE("x", x), TE_VARIABLE("y", y) };
+    te_variable vars[] = { TE_DEF_VARIABLE("x", x), TE_DEF_VARIABLE("y", y) };
 
     int err;
     /* Compile the expression with variables. */
@@ -142,7 +142,7 @@ line. It also does error checking and binds the variables `x` and `y` to *3* and
         /* This shows an example where the variables
          * x and y are bound at eval-time. */
         double x, y;
-        te_variable vars[] = { TE_VARIABLE("x", x), TE_VARIABLE("y", y) };
+        te_variable vars[] = { TE_DEF_VARIABLE("x", x), TE_DEF_VARIABLE("y", y) };
 
         /* This will compile the expression and check for errors. */
         int err;
@@ -211,8 +211,8 @@ line. It also does error checking and binds the variables `x` and `y` to *3* and
         /* This shows an example where the variables
          * x and y are bound at eval-time using their offset and a base_addr.
          * Such variables have not to exist at compile time. */
-        te_variable vars[] = { TE_OFFSET("x", offsetof(struct my_data, x)),
-            TE_OFFSET("y", offsetof(struct my_data, y)) };
+        te_variable vars[] = { TE_DEF_OFFSET("x", offsetof(struct my_data, x)),
+            TE_DEF_OFFSET("y", offsetof(struct my_data, y)) };
 
         /* This will compile the expression and check for errors. */
         int err;
@@ -262,7 +262,7 @@ This produces the output:
                 5.000000
 
 
-## Binding to Custom Functions
+## Binding to Custom Functions and Constants
 
 TinyExpr can also call to custom functions implemented in C. Here is a short example:
 
@@ -273,10 +273,11 @@ double my_sum(double a, double b) {
 }
 
 te_variable vars[] = {
-    TE_FUNCTION("mysum", my_sum, 2) /* my_sum takes two arguments. */
+      TE_DEF_FUNCTION("mysum", my_sum, 2), /* my_sum takes two arguments. */
+      TE_DEF_CONSTANT("five", 5)
 };
 
-te_expr *n = te_compile("mysum(5, 6)", vars, 1, 0);
+te_expr *n = te_compile("mysum(five, 6)", vars, 2, 0);
 
 ```
 
@@ -361,7 +362,6 @@ that zero / non-zero values that play the roles of false / true are doubles inst
 To write the cond part of conditional expressions, one could use comparison operators with
 their usual syntax and meaning (`>`, `<`, `>=`, `<=`, `==`, `!=`), except they produce doubles
 instead of ints. Additionaly, these operators can be used in arithmetic expressions:
-
 `(3 > 2) * 5` == 5.
 
 ## Functions supported

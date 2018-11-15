@@ -13,13 +13,16 @@ int main(int argc, char *argv[])
 {
     (void)argc; (void)argv;
     int ret = 0;
-    te_variable vars[] = { TE_FUNCTION("mysum", my_sum, 2) };
+    te_variable vars[] = {
+      TE_DEF_FUNCTION("mysum", my_sum, 2),
+      TE_DEF_CONSTANT("five", 5)
+    };
 
-    const char *expression = "mysum(5, 6)";
+    const char *expression = "mysum(five, 6)";
     printf("Evaluating:\n\t%s\n", expression);
 
     int err;
-    te_expr *n = te_compile(expression, vars, 1, &err);
+    te_expr *n = te_compile(expression, vars, 2, &err);
 
     if (n) {
       const double r = te_eval(n, NULL);

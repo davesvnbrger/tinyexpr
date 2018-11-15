@@ -36,8 +36,8 @@ int main(int argc, char *argv[])
     /* This shows an example where the variables
      * x and y are bound at eval-time using their offset and a base_addr.
      * Such variables have not to exist at compile time. */
-    te_variable vars[] = { TE_OFFSET("x", offsetof(struct my_data, x)),
-      TE_OFFSET("y", offsetof(struct my_data, y)) };
+    te_variable vars[] = { TE_DEF_OFFSET("x", offsetof(struct my_data, x)),
+      TE_DEF_OFFSET("y", offsetof(struct my_data, y)) };
 
     /* This will compile the expression and check for errors. */
     int err;

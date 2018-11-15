@@ -28,10 +28,11 @@
 #include <stddef.h>
 
 /* Helper macro to be used when defining a te_variable */
-#define TE_VARIABLE(Name, Var) {(Name), {.var=&(Var)}, TE_VARIABLE, NULL}
-#define TE_OFFSET(Name, Offset) {(Name), {.offset=(Offset)}, TE_OFFSET, NULL}
-#define TE_FUNCTION(Name, Fun, Arity) {(Name), {.f##Arity=(Fun)}, TE_FUNCTION##Arity, NULL}
-#define TE_CLOSURE(Name, Closure, Arity, Ctx) {(Name), {.cl##Arity=(Closure)}, TE_CLOSURE##Arity, (Ctx)}
+#define TE_DEF_VARIABLE(Name, Var) {(Name), {.var=&(Var)}, TE_VARIABLE, NULL}
+#define TE_DEF_OFFSET(Name, Offset) {(Name), {.offset=(Offset)}, TE_OFFSET, NULL}
+#define TE_DEF_CONSTANT(Name, Value) {(Name), {.value=(Value)}, TE_CONSTANT, NULL}
+#define TE_DEF_FUNCTION(Name, Fun, Arity) {(Name), {.f##Arity=(Fun)}, TE_FUNCTION##Arity, NULL}
+#define TE_DEF_CLOSURE(Name, Closure, Arity, Ctx) {(Name), {.cl##Arity=(Closure)}, TE_CLOSURE##Arity, (Ctx)}
 
 
 
