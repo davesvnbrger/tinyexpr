@@ -120,16 +120,9 @@ static te_expr *new_expr2(const int type, te_expr *p1, te_expr *p2) {
 }
 
 static void te_free_parameters(te_expr *n) {
+    int i;
     if (!n) return;
-    switch (TYPE_MASK(n->type)) {
-        case TE_FUNCTION7: case TE_CLOSURE7: te_free(n->parameters[6]);     /* Falls through. */
-        case TE_FUNCTION6: case TE_CLOSURE6: te_free(n->parameters[5]);     /* Falls through. */
-        case TE_FUNCTION5: case TE_CLOSURE5: te_free(n->parameters[4]);     /* Falls through. */
-        case TE_FUNCTION4: case TE_CLOSURE4: te_free(n->parameters[3]);     /* Falls through. */
-        case TE_FUNCTION3: case TE_CLOSURE3: te_free(n->parameters[2]);     /* Falls through. */
-        case TE_FUNCTION2: case TE_CLOSURE2: te_free(n->parameters[1]);     /* Falls through. */
-        case TE_FUNCTION1: case TE_CLOSURE1: te_free(n->parameters[0]);
-    }
+    for (i = 0; i < ARITY(n->type); i++)te_free(n->parameters[i]);
 }
 
 
@@ -627,38 +620,25 @@ double te_eval(const te_expr *n, const void* base_addr) {
         case TE_OFFSET: assert(base_addr);
           return *(double*)(((char*)base_addr)+n->v.offset);
 
-        case TE_FUNCTION0: case TE_FUNCTION1: case TE_FUNCTION2: case TE_FUNCTION3:
-        case TE_FUNCTION4: case TE_FUNCTION5: case TE_FUNCTION6: case TE_FUNCTION7:
-            switch(ARITY(n->type)) {
-                case 0: return n->v.f0();
-                case 1: return n->v.f1(M(0));
-                case 2: return n->v.f2(M(0), M(1));
-                case 3:
-                    if (IS_CONDITION(n->type)) {
-                        assert(n->v.f3 == NULL);
-                        return M(0) ? M(1) : M(2);
-                    }
-                    else return n->v.f3(M(0), M(1), M(2));
-                case 4: return n->v.f4(M(0), M(1), M(2), M(3));
-                case 5: return n->v.f5(M(0), M(1), M(2), M(3), M(4));
-                case 6: return n->v.f6(M(0), M(1), M(2), M(3), M(4), M(5));
-                case 7: return n->v.f7(M(0), M(1), M(2), M(3), M(4), M(5), M(6));
-                default: return NAN;
-            }
+        case TE_FUNCTION0: return n->v.f0();
+        case TE_FUNCTION1: return n->v.f1(M(0));
+        case TE_FUNCTION2: return n->v.f2(M(0), M(1));
+        case TE_FUNCTION3:
+             if (IS_CONDITION(n->type)) return M(0) ? M(1) : M(2);
+             else return n->v.f3(M(0), M(1), M(2));
+        case TE_FUNCTION4: return n->v.f4(M(0), M(1), M(2), M(3));
+        case TE_FUNCTION5: return n->v.f5(M(0), M(1), M(2), M(3), M(4));
+        case TE_FUNCTION6: return n->v.f6(M(0), M(1), M(2), M(3), M(4), M(5));
+        case TE_FUNCTION7: return n->v.f7(M(0), M(1), M(2), M(3), M(4), M(5), M(6));
 
-        case TE_CLOSURE0: case TE_CLOSURE1: case TE_CLOSURE2: case TE_CLOSURE3:
-        case TE_CLOSURE4: case TE_CLOSURE5: case TE_CLOSURE6: case TE_CLOSURE7:
-            switch(ARITY(n->type)) {
-                case 0: return n->v.cl0(n->parameters[0]);
-                case 1: return n->v.cl1(n->parameters[1], M(0));
-                case 2: return n->v.cl2(n->parameters[2], M(0), M(1));
-                case 3: return n->v.cl3(n->parameters[3], M(0), M(1), M(2));
-                case 4: return n->v.cl4(n->parameters[4], M(0), M(1), M(2), M(3));
-                case 5: return n->v.cl5(n->parameters[5], M(0), M(1), M(2), M(3), M(4));
-                case 6: return n->v.cl6(n->parameters[6], M(0), M(1), M(2), M(3), M(4), M(5));
-                case 7: return n->v.cl7(n->parameters[7], M(0), M(1), M(2), M(3), M(4), M(5), M(6));
-                default: return NAN;
-            }
+        case TE_CLOSURE0: return n->v.cl0(n->parameters[0]);
+        case TE_CLOSURE1: return n->v.cl1(n->parameters[1], M(0));
+        case TE_CLOSURE2: return n->v.cl2(n->parameters[2], M(0), M(1));
+        case TE_CLOSURE3: return n->v.cl3(n->parameters[3], M(0), M(1), M(2));
+        case TE_CLOSURE4: return n->v.cl4(n->parameters[4], M(0), M(1), M(2), M(3));
+        case TE_CLOSURE5: return n->v.cl5(n->parameters[5], M(0), M(1), M(2), M(3), M(4));
+        case TE_CLOSURE6: return n->v.cl6(n->parameters[6], M(0), M(1), M(2), M(3), M(4), M(5));
+        case TE_CLOSURE7: return n->v.cl7(n->parameters[7], M(0), M(1), M(2), M(3), M(4), M(5), M(6));
 
         default: return NAN;
     }
@@ -678,17 +658,10 @@ static int expr_equal(const te_expr* e1, const te_expr* e2) {
 }
 
 static void optimize(te_expr *n) {
-    /* Evaluates as much as possible. */
-    if (n->type == TE_CONSTANT) return;
-    if (n->type == TE_VARIABLE) return;
-    if (n->type == TE_OFFSET) return;
-    /* Only optimize out functions flagged as pure. */
-    if (!IS_PURE(n->type)) return;
-
-    /* Conditions are a special case */
+    /* Only optimize out conditions and functions flagged as pure. */
     if (IS_CONDITION(n->type)) {
         te_expr* cond = n->parameters[0];
-        assert(ARITY(n->type) == 3);
+        assert(IS_FUNCTION(n->type) && ARITY(n->type) == 3);
         optimize(cond);
         if (cond->type == TE_CONSTANT) {
             te_expr* keep = (cond->v.value) ? n->parameters[1] : n->parameters[2];
@@ -710,10 +683,11 @@ static void optimize(te_expr *n) {
             }
         }
     }
-    else {
+    else if (IS_PURE(n->type)) {
         const int arity = ARITY(n->type);
         int known = 1;
         int i;
+        assert(IS_FUNCTION(n->type));
         for (i = 0; i < arity; ++i) {
             optimize(n->parameters[i]);
             if (((te_expr*)(n->parameters[i]))->type != TE_CONSTANT) {
