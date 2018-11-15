@@ -58,6 +58,9 @@ enum {
     TOK_OPEN, TOK_CLOSE, TOK_NUMBER, TOK_VARIABLE, TOK_OFFSET, TOK_INFIX
 };
 
+enum {
+    TE_CONDITION = 256
+};
 
 typedef struct state {
     const char *start;
@@ -76,6 +79,7 @@ typedef struct state {
 #define IS_PURE(TYPE) (((TYPE) & TE_FLAG_PURE) != 0)
 #define IS_FUNCTION(TYPE) (((TYPE) & TE_FUNCTION0) != 0)
 #define IS_CLOSURE(TYPE) (((TYPE) & TE_CLOSURE0) != 0)
+#define IS_CONDITION(TYPE) (((TYPE) & TE_CONDITION) != 0)
 #define ARITY(TYPE) ( ((TYPE) & (TE_FUNCTION0 | TE_CLOSURE0)) ? ((TYPE) & 0x00000007) : 0 )
 #define NEW_EXPR(type, ...) new_expr((type), (const te_expr*[]){__VA_ARGS__})
 
@@ -179,6 +183,8 @@ static const te_variable functions[] = {
     {"atan", {.f1=atan}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"atan2", {.f2=atan2}, TE_FUNCTION2 | TE_FLAG_PURE, 0},
     {"ceil", {.f1=ceil_}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
+    {"condition", {.f3=NULL}, /* Specific treatment, no associated C function */
+      TE_FUNCTION3 | TE_CONDITION | TE_FLAG_PURE, 0},
     {"cos", {.f1=cos}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"cosh", {.f1=cosh}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"e", {.f0=e}, TE_FUNCTION0 | TE_FLAG_PURE, 0},
@@ -246,7 +252,18 @@ static double mul(double a, double b) {return a * b;}
 static double divide(double a, double b) {return a / b;}
 static double negate(double a) {return -a;}
 static double comma(double a, double b) {(void)a; return b;}
+static double is_gt(double a, double b) { return a > b ? 1 : 0; }
+static double is_ge(double a, double b) { return a >= b ? 1 : 0; }
+static double is_lt(double a, double b) { return a < b ? 1 : 0; }
+static double is_le(double a, double b) { return a <= b ? 1 : 0; }
+static double is_eq(double a, double b) { return a == b ? 1 : 0; }
+static double is_neq(double a, double b) { return a != b ? 1 : 0; }
 
+static int next_if(state *s, const char c) {
+    int r =  *s->next && s->next[0] == c;
+    if (r) s->next++;
+    return r;
+}
 
 static void next_token(state *s) {
     s->type = TOK_NULL;
@@ -308,6 +325,16 @@ static void next_token(state *s) {
                     case '/': s->type = TOK_INFIX; s->v.f2 = divide; break;
                     case '^': s->type = TOK_INFIX; s->v.f2 = pow; break;
                     case '%': s->type = TOK_INFIX; s->v.f2 = fmod; break;
+                    case '>': s->type = TOK_INFIX;
+                      s->v.f2 = next_if(s, '=') ?  is_ge : is_gt; break;
+                    case '<': s->type = TOK_INFIX;
+                      s->v.f2 = next_if(s, '=') ? is_le : is_lt; break;
+                    case '=': s->type = TOK_INFIX;
+                      /* The only valid char after = is = */
+                      s->v.f2 = next_if(s, '=') ? is_eq : (s->type = TOK_ERROR, 0); break;
+                    case '!': s->type = TOK_INFIX;
+                      /* The only valid char after ! is = */
+                      s->v.f2 = next_if(s, '=') ? is_neq : (s->type = TOK_ERROR, 0); break;
                     case '(': s->type = TOK_OPEN; break;
                     case ')': s->type = TOK_CLOSE; break;
                     case ',': s->type = TOK_SEP; break;
@@ -321,7 +348,7 @@ static void next_token(state *s) {
 
 
 static te_expr *list(state *s);
-static te_expr *expr(state *s);
+static te_expr *eql(state *s);
 static te_expr *power(state *s);
 
 static te_expr *base(state *s) {
@@ -390,7 +417,7 @@ static te_expr *base(state *s) {
                 int i;
                 for(i = 0; i < arity; i++) {
                     next_token(s);
-                    ret->parameters[i] = expr(s);
+                    ret->parameters[i] = eql(s);
                     if(s->type != TOK_SEP) {
                         break;
                     }
@@ -532,14 +559,45 @@ static te_expr *expr(state *s) {
 }
 
 
-static te_expr *list(state *s) {
-    /* <list>      =    <expr> {"," <expr>} */
+static te_expr *cmp(state *s) {
+    /* <cmp>      =    <expr> {(">" | "<" | ">=" | "<=") <expr>} */
     te_expr *ret = expr(s);
 
+    while (s->type == TOK_INFIX
+      && (s->v.f2 == is_lt || s->v.f2 == is_le || s->v.f2 == is_gt || s->v.f2 == is_ge)) {
+      te_fun2 t = s->v.f2;
+      next_token(s);
+      ret = new_expr2(TE_FUNCTION2 | TE_FLAG_PURE, ret, expr(s));
+      ret->v.f2 = t;
+    }
+
+    return ret;
+}
+
+
+static te_expr *eql(state *s) {
+    /* <eql>      =    <cmp> {("==" | "!=") <cmp>} */
+    te_expr *ret = cmp(s);
+
+    while (s->type == TOK_INFIX && (s->v.f2 == is_eq || s->v.f2 == is_neq)) {
+      te_fun2 t = s->v.f2;
+      next_token(s);
+      ret = new_expr2(TE_FUNCTION2 | TE_FLAG_PURE, ret, cmp(s));
+      ret->v.f2 = t;
+    }
+
+    return ret;
+}
+
+
+static te_expr *list(state *s) {
+    /* <list>      =    <eql> {"," <eql>} */
+    te_expr *ret = eql(s);
+
     while (s->type == TOK_SEP) {
-        next_token(s);
-        ret = new_expr2(TE_FUNCTION2 | TE_FLAG_PURE, ret, expr(s));
-        ret->v.f2 = comma;
+      next_token(s);
+      ret = new_expr2(TE_FUNCTION2 | TE_FLAG_PURE, ret, eql(s));
+      ret->v.f2 = comma;
     }
 
     return ret;
@@ -564,7 +622,12 @@ double te_eval(const te_expr *n, const void* base_addr) {
                 case 0: return n->v.f0();
                 case 1: return n->v.f1(M(0));
                 case 2: return n->v.f2(M(0), M(1));
-                case 3: return n->v.f3(M(0), M(1), M(2));
+                case 3:
+                    if (IS_CONDITION(n->type)) {
+                        assert(n->v.f3 == NULL);
+                        return M(0) ? M(1) : M(2);
+                    }
+                    else return n->v.f3(M(0), M(1), M(2));
                 case 4: return n->v.f4(M(0), M(1), M(2), M(3));
                 case 5: return n->v.f5(M(0), M(1), M(2), M(3), M(4));
                 case 6: return n->v.f6(M(0), M(1), M(2), M(3), M(4), M(5));
@@ -593,14 +656,50 @@ double te_eval(const te_expr *n, const void* base_addr) {
 
 #undef M
 
+static int expr_equal(const te_expr* e1, const te_expr* e2) {
+    int i;
+    if (e1->type != e2->type) return 0;
+    if (e1->v.any != e2->v.any) return 0;
+    for (i = 0; i < ARITY(e1->type); i++) {
+      if(!expr_equal(e1->parameters[i], e2->parameters[i])) return 0;
+    }
+    return 1;
+}
+
 static void optimize(te_expr *n) {
     /* Evaluates as much as possible. */
     if (n->type == TE_CONSTANT) return;
     if (n->type == TE_VARIABLE) return;
     if (n->type == TE_OFFSET) return;
-
     /* Only optimize out functions flagged as pure. */
-    if (IS_PURE(n->type)) {
+    if (!IS_PURE(n->type)) return;
+
+    /* Conditions are a special case */
+    if (IS_CONDITION(n->type)) {
+        te_expr* cond = n->parameters[0];
+        assert(ARITY(n->type) == 3);
+        optimize(cond);
+        if (cond->type == TE_CONSTANT) {
+            te_expr* keep = (cond->v.value) ? n->parameters[1] : n->parameters[2];
+            /* Can keep either param[1] or param[2] */
+            optimize(keep);
+            n->type = keep->type;
+            n->v.any = keep->v.any;
+            te_free_parameters(n);
+        }
+        else { /* c ? x : x is x */
+            te_expr* if_branch = n->parameters[1];
+            te_expr* else_branch = n->parameters[2];
+            optimize(if_branch);
+            optimize(else_branch);
+            if (expr_equal(if_branch, else_branch)) {
+                n->type = if_branch->type;
+                n->v.any = if_branch->v.any;
+                te_free_parameters(n);
+            }
+        }
+    }
+    else {
         const int arity = ARITY(n->type);
         int known = 1;
         int i;

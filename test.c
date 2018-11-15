@@ -144,6 +144,19 @@ static void test_results() {
         {"atan2((3+3),4*2)", 0.6435},
         {"atan2((3+3),(4*2))", 0.6435},
 
+        { "1>2", 0 },
+        { "1>=2", 0 },
+        { "1<2", 1 },
+        { "1<=2", 1 },
+        { "1==2", 0 },
+        { "1!=2", 1 },
+        { "1>1", 0 },
+        { "1>=1", 1 },
+        { "1<1", 0 },
+        { "1<=1", 1 },
+        { "1==1", 1 },
+        { "1!=1", 0 },
+        { "(3 > 2) * 5", 5 },
     };
 
 
@@ -376,11 +389,13 @@ static void test_functions() {
         cross_check("sqrt x", sqrt(x));
         cross_check("tan x", tan(x));
         cross_check("tanh x", tanh(x));
+        cross_check("condition(x>0, 1, 2)", (x > 0. ? 1. : 2.));
 
         for (y = -2; y < 2; y += .2) {
             if (fabs(x) < 0.01) break;
             cross_check("atan2(x,y)", atan2(x, y));
             cross_check("pow(x,y)", pow(x, y));
+            cross_check("condition(x!=y, x, y)", (x != y ? x : y));
         }
     }
 }

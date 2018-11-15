@@ -325,7 +325,9 @@ Here is some example performance numbers taken from the included
 
 TinyExpr parses the following grammar:
 
-    <list>      =    <expr> {"," <expr>}
+    <list>      =    <eql> {"," <eql>}
+    <eql>       =    <cmp> {("==" | "!=") <cmp>}
+    <cmp>       =    <expr> {(">" | "<" | ">=" | "<=") <expr>}
     <expr>      =    <term> {("+" | "-") <term>}
     <term>      =    <factor> {("*" | "/" | "%") <factor>}
     <factor>    =    <power> {"^" <power>}
@@ -345,6 +347,16 @@ underscore. Constants can be integers, decimal numbers, or in scientific
 notation (e.g.  *1e3* for *1000*). A leading zero is not required (e.g. *.5*
 for *0.5*)
 
+
+## Conditional expressions
+
+TinyExpr supports a special construct that allows conditional expressions:
+`condition(cond, if, else)`. This construct first evaluates its first argument, then according
+to this value evaluates either its second argument (if non 0.0) or its third argument (if 0.0).
+The other argument remains unevaluated, as expected.
+
+This construct works very like the "cond ? if : else" C expression, with the only difference
+that zero / non-zero values that play the roles of false / true are doubles instead of ints.
 
 ## Functions supported
 

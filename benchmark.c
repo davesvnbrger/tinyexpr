@@ -33,7 +33,6 @@
 #define default_loops 100000000
 
 
-
 typedef double (*function1)(double);
 
 static void bench(const char *expr, function1 func, int count) {
@@ -62,9 +61,6 @@ static void bench(const char *expr, function1 func, int count) {
     else
         printf("\tinf\n");
 
-
-
-
     printf("interp: ");
     te_expr *n = te_compile(expr, &lk, 1, 0);
     start = clock();
@@ -83,11 +79,7 @@ static void bench(const char *expr, function1 func, int count) {
     else
         printf("\tinf\n");
 
-
-    printf("%.2f%% longer\n", (((double)eelapsed / (double)nelapsed) - 1.0) * 100.0);
-
-
-    printf("\n");
+    printf("%.2f%% longer\n\n", (((double)eelapsed / (double)nelapsed) - 1.0) * 100.0);
 }
 
 
@@ -111,6 +103,10 @@ static double al(double a) {
     return (1/(a+1)+2/(a+2)+3/(a+3));
 }
 
+static double ac(double a) {
+    return (a > 100 ? 1 : 2);
+}
+
 int main(int argc, char *argv[])
 {
     int count = default_loops;
@@ -125,6 +121,7 @@ int main(int argc, char *argv[])
     bench("a+(5*2)", a10, count);
     bench("(a+5)*2", a52, count);
     bench("(1/(a+1)+2/(a+2)+3/(a+3))", al, count);
+    bench("condition(a>100, 1, 2)", ac, count);
 
     return 0;
 }
