@@ -358,6 +358,12 @@ The other argument remains unevaluated, as expected.
 This construct works very like the "cond ? if : else" C expression, with the only difference
 that zero / non-zero values that play the roles of false / true are doubles instead of ints.
 
+To write the cond part of conditional expressions, one could use comparison operators with
+their usual syntax and meaning (`>`, `<`, `>=`, `<=`, `==`, `!=`), except they produce doubles
+instead of ints. Additionaly, these operators can be used in arithmetic expressions:
+
+`(3 > 2) * 5` == 5.
+
 ## Functions supported
 
 TinyExpr supports addition (+), subtraction/negation (-), multiplication (\*),
