@@ -10,3 +10,4 @@ tags
 #*#
 *pow*.c
 *.exe
+*.orig
