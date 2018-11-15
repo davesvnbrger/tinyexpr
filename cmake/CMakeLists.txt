@@ -43,7 +43,8 @@ endif()
 
 ADD_LIBRARY(tinyexpr STATIC
   ${TINYEXPR_SOURCE_DIR}/tinyexpr.c ${TINYEXPR_SOURCE_DIR}/tinyexpr.h)
-set_target_properties(tinyexpr PROPERTIES
+  set_target_properties(tinyexpr PROPERTIES
+    COMPILE_FLAGS "-DTE_NAT_LOG=1" # Default is left to right pow and log is natural log
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})
 if(CMAKE_COMPILER_IS_GNUCC)
@@ -56,59 +57,47 @@ target_link_libraries(tinyexpr ${MATH_LIB})
 ################################################################################
 if(NOT LIB_ONLY)
 
-  function(build_test _name)
-    add_executable(${_name} ${TINYEXPR_SOURCE_DIR}/${_name}.c)
+  function(build_test _name _source _lib)
+    add_executable(${_name}
+	  ${TINYEXPR_SOURCE_DIR}/${_source}.c
+	  ${TINYEXPR_SOURCE_DIR}/minctest.h)
+	# additional args are compile flags
+    set_target_properties(${_name} PROPERTIES COMPILE_FLAGS "${ARGN}")
     if(CMAKE_COMPILER_IS_GNUCC)
       set_target_properties(${_name} PROPERTIES COMPILE_FLAGS "-std=c99")
       set(MATH_LIB m)
     endif()
-    target_link_libraries(${_name} ${MATH_LIB})
-    set(_libraries ${ARGN})
-    foreach(_lib ${_libraries})
-      target_link_libraries(${_name} ${_lib})
-    endforeach()
+    target_link_libraries(${_name} ${_lib} ${MATH_LIB})
   endfunction()
 
-  function(new_test _name)
-    build_test(${_name} ${ARGN})
+  function(new_test _name _source _lib)
+    build_test(${_name} ${_source} ${_lib} ${ARGN})
     add_test(${_name} ${_name})
   endfunction()
   
-  # create files variants
-  file(READ ${TINYEXPR_SOURCE_DIR}/tinyexpr.c tinyexpr_c_file_content)
-  file(WRITE ${PROJECT_BINARY_DIR}/tinyexpr_pow_right.c
-"#define TE_POW_FROM_RIGHT 1
-#define TE_NAT_LOG 1
-${tinyexpr_c_file_content}")
-
-  file(READ ${TINYEXPR_SOURCE_DIR}/test.c test_c_file_content)
-  file(WRITE ${TINYEXPR_SOURCE_DIR}/test_pow_left.c "${test_c_file_content}")
-  file(WRITE ${TINYEXPR_SOURCE_DIR}/test_pow_right.c
-"#define TE_POW_FROM_RIGHT 1
-#define TE_NAT_LOG 1
-${test_c_file_content}")
-
   # create tinyexpr lib variant
   ADD_LIBRARY(tinyexpr_pow_right STATIC
-    ${PROJECT_BINARY_DIR}/tinyexpr_pow_right.c ${TINYEXPR_SOURCE_DIR}/tinyexpr.h)
-  set_target_properties(tinyexpr_pow_right PROPERTIES VERSION ${VERSION})
+    ${TINYEXPR_SOURCE_DIR}/tinyexpr.c ${TINYEXPR_SOURCE_DIR}/tinyexpr.h)
+  set_target_properties(tinyexpr_pow_right PROPERTIES
+    VERSION ${VERSION}
+    COMPILE_FLAGS "-DTE_POW_FROM_RIGHT=1") # Check non default: right to left pow and log is log10
   if(CMAKE_COMPILER_IS_GNUCC)
     set_target_properties(tinyexpr_pow_right PROPERTIES COMPILE_FLAGS "-std=c99")
   endif()
   target_link_libraries(tinyexpr_pow_right ${MATH_LIB})
 
   # tests
-  new_test(example tinyexpr)
-  build_test(example2 tinyexpr)
+  new_test(example example tinyexpr "-DTE_NAT_LOG=1")
+  build_test(example2 example2 tinyexpr "-DTE_NAT_LOG=1")
   add_test(example2_347 example2 "x+y" 3 4 7)
   add_test(example2_310 example2 "-5+x+2*y" 3 1 0)
-  build_test(example2off tinyexpr)
-  add_test(example2off_347 example2 "x+y" 3 4 7)
-  add_test(example2off_310 example2 "-5+x+2*y" 3 1 0)
-  new_test(example3 tinyexpr)
-  new_test(test_pow_left tinyexpr)
-  new_test(test_pow_right tinyexpr_pow_right)
-  build_test(benchmark tinyexpr)
+  build_test(example2off example2off tinyexpr "-DTE_NAT_LOG=1")
+  add_test(example2off_347 example2off "x+y" 3 4 7)
+  add_test(example2off_310 example2off "-5+x+2*y" 3 1 0)
+  new_test(example3 example3 tinyexpr "-DTE_NAT_LOG=1")
+  new_test(test_pow_left_natlog test tinyexpr "-DTE_NAT_LOG=1")
+  new_test(test_pow_right_log10 test tinyexpr_pow_right "-DTE_POW_FROM_RIGHT=1") # check right to left pow and log is log10
+  build_test(benchmark benchmark tinyexpr "-DTE_NAT_LOG=1")
   add_test(benchmark_100 benchmark 100)
 
 endif(NOT LIB_ONLY)
