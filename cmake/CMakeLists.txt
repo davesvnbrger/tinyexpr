@@ -41,10 +41,20 @@ elseif(CMAKE_COMPILER_IS_GNUCC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wshadow -Wcast-align -Wmissing-declarations -Wmissing-prototypes -Wconversion -Wno-long-long -pedantic")
 endif()
 
+# Default is right to left pow and log is natural log
+# Build tinyExpr without closure support and with function_1 to function_3 support only
+# (these ones cannot be disabled as predefined functions require them).
+set(TE_DEFAULTS
+  "-DTE_POW_FROM_RIGHT -DTE_NAT_LOG -DTE_WITHOUT_CLOSURES -DTE_WITHOUT_FUNCTION_0 -DTE_MAX_FUNCTION_ARITY=3")
+# Settings to allow other code branches to be tested (cannot be the empty string)
+set(TE_NON_DEFAULTS "-DTE_POW_FROM_LEFT -DTE_LOG_10") # Meaningless defines
+
 ADD_LIBRARY(tinyexpr STATIC
   ${TINYEXPR_SOURCE_DIR}/tinyexpr.c ${TINYEXPR_SOURCE_DIR}/tinyexpr.h)
-  set_target_properties(tinyexpr PROPERTIES
-    COMPILE_FLAGS "-DTE_NAT_LOG=1" # Default is left to right pow and log is natural log
+set_target_properties(tinyexpr PROPERTIES
+  # Default is left to right pow and log is natural log
+  # Build tinyExpr without closure support and with function_1 to function_3 only
+  COMPILE_FLAGS ${TE_DEFAULTS}
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})
 if(CMAKE_COMPILER_IS_GNUCC)
@@ -75,29 +85,30 @@ if(NOT LIB_ONLY)
     add_test(${_name} ${_name})
   endfunction()
   
-  # create tinyexpr lib variant
-  ADD_LIBRARY(tinyexpr_pow_right STATIC
+  # create tinyexpr lib variant to check all the stuff not checked by tinyexpr.lib
+  ADD_LIBRARY(tinyexpr_others STATIC
     ${TINYEXPR_SOURCE_DIR}/tinyexpr.c ${TINYEXPR_SOURCE_DIR}/tinyexpr.h)
-  set_target_properties(tinyexpr_pow_right PROPERTIES
+  set_target_properties(tinyexpr_others PROPERTIES
     VERSION ${VERSION}
-    COMPILE_FLAGS "-DTE_POW_FROM_RIGHT=1") # Check non default: right to left pow and log is log10
+    COMPILE_FLAGS ${TE_NON_DEFAULTS})
   if(CMAKE_COMPILER_IS_GNUCC)
-    set_target_properties(tinyexpr_pow_right PROPERTIES COMPILE_FLAGS "-std=c99")
+    set_target_properties(tinyexpr_others PROPERTIES COMPILE_FLAGS "-std=c99")
   endif()
-  target_link_libraries(tinyexpr_pow_right ${MATH_LIB})
+  target_link_libraries(tinyexpr_others ${MATH_LIB})
 
   # tests
-  new_test(example example tinyexpr "-DTE_NAT_LOG=1")
-  build_test(example2 example2 tinyexpr "-DTE_NAT_LOG=1")
+  new_test(example example tinyexpr ${TE_DEFAULTS})
+  build_test(example2 example2 tinyexpr ${TE_DEFAULTS})
   add_test(example2_347 example2 "x+y" 3 4 7)
   add_test(example2_310 example2 "-5+x+2*y" 3 1 0)
-  build_test(example2off example2off tinyexpr "-DTE_NAT_LOG=1")
+  build_test(example2off example2off tinyexpr ${TE_DEFAULTS})
   add_test(example2off_347 example2off "x+y" 3 4 7)
   add_test(example2off_310 example2off "-5+x+2*y" 3 1 0)
-  new_test(example3 example3 tinyexpr "-DTE_NAT_LOG=1")
-  new_test(test_pow_left_natlog test tinyexpr "-DTE_NAT_LOG=1")
-  new_test(test_pow_right_log10 test tinyexpr_pow_right "-DTE_POW_FROM_RIGHT=1") # check right to left pow and log is log10
-  build_test(benchmark benchmark tinyexpr "-DTE_NAT_LOG=1")
+  new_test(example3 example3 tinyexpr ${TE_DEFAULTS})
+  build_test(benchmark benchmark tinyexpr ${TE_DEFAULTS})
+  new_test(test_pow_defaults test tinyexpr ${TE_DEFAULTS})
+  # Check all the stuff not checked by test_pow_defaults
+  new_test(test_pow_others test tinyexpr_others ${TE_NON_DEFAULTS})
   add_test(benchmark_100 benchmark 100)
 
 endif(NOT LIB_ONLY)

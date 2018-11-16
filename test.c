@@ -401,9 +401,11 @@ static void test_functions() {
 }
 
 
+#ifndef TE_WITHOUT_FUNCTION_0
 static double sum0(void) {
     return 6;
 }
+#endif
 static double sum1(double a) {
     return a * 2;
 }
@@ -413,18 +415,26 @@ static double sum2(double a, double b) {
 static double sum3(double a, double b, double c) {
     return a + b + c;
 }
+#if TE_MAX_FUNCTION_ARITY >= 4
 static double sum4(double a, double b, double c, double d) {
     return a + b + c + d;
 }
+#endif
+#if TE_MAX_FUNCTION_ARITY >= 5
 static double sum5(double a, double b, double c, double d, double e) {
     return a + b + c + d + e;
 }
+#endif
+#if TE_MAX_FUNCTION_ARITY >= 6
 static double sum6(double a, double b, double c, double d, double e, double f) {
     return a + b + c + d + e + f;
 }
+#endif
+#if TE_MAX_FUNCTION_ARITY == 7
 static double sum7(double a, double b, double c, double d, double e, double f, double g) {
     return a + b + c + d + e + f + g;
 }
+#endif
 
 
 static void test_dynamic() {
@@ -433,14 +443,25 @@ static void test_dynamic() {
     te_variable lookup[] = {
         TE_DEF_VARIABLE("x", x),
         TE_DEF_VARIABLE("f", f),
-        TE_DEF_CONSTANT("sum0", 6),
+        TE_DEF_CONSTANT("six", 6),
+#ifndef TE_WITHOUT_FUNCTION_0
+        TE_DEF_FUNCTION("sum0", sum0, 0),
+#endif
         TE_DEF_FUNCTION("sum1", sum1, 1),
         TE_DEF_FUNCTION("sum2", sum2, 2),
         TE_DEF_FUNCTION("sum3", sum3, 3),
+#if TE_MAX_FUNCTION_ARITY >= 4
         TE_DEF_FUNCTION("sum4", sum4, 4),
+#endif
+#if TE_MAX_FUNCTION_ARITY >= 5
         TE_DEF_FUNCTION("sum5", sum5, 5),
+#endif
+#if TE_MAX_FUNCTION_ARITY >= 6
         TE_DEF_FUNCTION("sum6", sum6, 6),
+#endif
+#if TE_MAX_FUNCTION_ARITY == 7
         TE_DEF_FUNCTION("sum7", sum7, 7),
+#endif
     };
 
     test_case cases[] = {
@@ -449,20 +470,40 @@ static void test_dynamic() {
         {"x+x", 4},
         {"x+f", 7},
         {"f+f", 10},
+        {"f+six", 11},
+#ifndef TE_WITHOUT_FUNCTION_0
         {"f+sum0", 11},
+        {"f+sum0()", 11},
         {"sum0+sum0", 12},
+        {"sum0()+sum0", 12},
+        {"sum0+sum0()", 12},
+        {"sum0()+sum0()", 12},
         {"sum1 sum0", 12},
+        {"sum1 sum0()", 12},
         {"sum1(sum0)", 12},
+        {"sum1(sum0())", 12},
+#endif
         {"sum1 f", 10},
         {"sum1 x", 4},
-        {"sum2 (sum0, x)", 8},
-        {"sum3 (sum0, x, 2)", 10},
+        {"sum1 six", 12},
+        {"sum2 (sum1 x, x)", 6},
+        {"sum2 (sum1(x), x)", 6},
+        {"sum3 (sum1 x, x, 2)", 8},
+        {"sum3 (sum1(x), x, 2)", 8},
         {"sum2(2,3)", 5},
         {"sum3(2,3,4)", 9},
+#if TE_MAX_FUNCTION_ARITY >= 4
         {"sum4(2,3,4,5)", 14},
+#endif
+#if TE_MAX_FUNCTION_ARITY >= 5
         {"sum5(2,3,4,5,6)", 20},
+#endif
+#if TE_MAX_FUNCTION_ARITY >= 6
         {"sum6(2,3,4,5,6,7)", 27},
+#endif
+#if TE_MAX_FUNCTION_ARITY == 7
         {"sum7(2,3,4,5,6,7,8)", 35},
+#endif
     };
 
     x = 2;
@@ -482,6 +523,7 @@ static void test_dynamic() {
 }
 
 
+#ifndef TE_WITHOUT_CLOSURES
 static double clo0(void *context) {
     if (context) return *((double*)context) + 6;
     return 6;
@@ -555,6 +597,7 @@ static void test_closure() {
         te_free(ex);
     }
 }
+#endif
 
 static void test_optimize() {
 
@@ -691,7 +734,9 @@ int main(int argc, char *argv[])
     lrun("Variables", test_variables);
     lrun("Functions", test_functions);
     lrun("Dynamic", test_dynamic);
+#ifndef TE_WITHOUT_CLOSURES
     lrun("Closure", test_closure);
+#endif
     lrun("Optimize", test_optimize);
     lrun("Pow", test_pow);
     lrun("Combinatorics", test_combinatorics);
