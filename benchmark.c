@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
     bench("a+(5*2)", a10, count);
     bench("(a+5)*2", a52, count);
     bench("(1/(a+1)+2/(a+2)+3/(a+3))", al, count);
-    bench("condition(a>100, 1, 2)", ac, count);
+    bench("if(a>100, 1, 2)", ac, count);
 
     return 0;
 }

@@ -203,14 +203,14 @@ static const te_variable functions[] = {
     {"atan", {.f1=atan}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"atan2", {.f2=atan2}, TE_FUNCTION2 | TE_FLAG_PURE, 0},
     {"ceil", {.f1=ceil_}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
-    {"condition", {.f3=NULL}, /* Specific treatment, no associated C function */
-      TE_FUNCTION3 | TE_CONDITION | TE_FLAG_PURE, 0},
     {"cos", {.f1=cos}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"cosh", {.f1=cosh}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"e", {.value = M_E}, TE_CONSTANT, 0},
     {"exp", {.f1=exp}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"fac", {.f1=fac}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"floor", {.f1=floor_}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
+    {"if", {.f3 = NULL}, /* Specific treatment, no associated C function */
+        TE_FUNCTION3 | TE_CONDITION | TE_FLAG_PURE, 0},
     {"ln", {.f1=log}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
 #ifdef TE_NAT_LOG
     {"log", {.f1=log}, TE_FUNCTION1 | TE_FLAG_PURE, 0},

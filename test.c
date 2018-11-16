@@ -389,13 +389,13 @@ static void test_functions() {
         cross_check("sqrt x", sqrt(x));
         cross_check("tan x", tan(x));
         cross_check("tanh x", tanh(x));
-        cross_check("condition(x>0, 1, 2)", (x > 0. ? 1. : 2.));
+        cross_check("if(x>0, 1, 2)", (x > 0. ? 1. : 2.));
 
         for (y = -2; y < 2; y += .2) {
             if (fabs(x) < 0.01) break;
             cross_check("atan2(x,y)", atan2(x, y));
             cross_check("pow(x,y)", pow(x, y));
-            cross_check("condition(x!=y, x, y)", (x != y ? x : y));
+            cross_check("if(x!=y, x, y)", (x != y ? x : y));
         }
     }
 }
