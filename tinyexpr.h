@@ -41,7 +41,9 @@ extern "C" {
 #endif
 
 #ifdef TE_MAX_FUNCTION_ARITY
-  static_assert(TE_MAX_FUNCTION_ARITY >= 3 && TE_MAX_FUNCTION_ARITY <= 7, "valid range for TE_MAX_FUNCTION_ARITY is [3 7]");
+#if !(TE_MAX_FUNCTION_ARITY >= 3 && TE_MAX_FUNCTION_ARITY <= 7)
+#error Valid range for TE_MAX_FUNCTION_ARITY is [3 7]
+#endif
 #else 
 #define TE_MAX_FUNCTION_ARITY 7
 #endif
