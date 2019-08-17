@@ -174,39 +174,62 @@ static double ncr(double n, double r) {
 static double npr(double n, double r) { return ncr(n, r) * fac(r); }
 
 /* Workaround for a VC 2017 problem */
-static double ceil_(double x) { return ceil(x); }
-static double floor_(double x) { return floor(x); }
+static double fabs_      (double x) { return fabs   (x);}
+static double acos_		 (double x) { return acos	(x);}
+static double asin_		 (double x) { return asin	(x);}
+static double atan_		 (double x) { return atan	(x);}
+static double atan2_	 (double y, double x) { return atan2	(y, x);}
+static double ceil_		 (double x) { return ceil	(x);}
+static double cos_		 (double x) { return cos	(x);}
+static double cosh_		 (double x) { return cosh	(x);}
+static double e_		 ()         { return e		();}
+static double exp_		 (double x) { return exp	(x);}
+static double fac_		 (double x) { return fac	(x);}
+static double floor_	 (double x) { return floor( x);}
+static double log_		 (double x) { return log	(x);}
+static double log10_	 (double x) { return log10	(x);}
+static double ncr_		 (double n, double r) { return ncr	(n, r);}
+static double npr_		 (double n, double r) { return npr	(n, r);}
+static double pi_		 ()         { return pi	    ();}
+static double pow_		 (double x, double y) { return pow	(x, y);}
+static double sin_		 (double x) { return sin	(x);}
+static double sinh_		 (double x) { return sinh	(x);}
+static double sqrt_		 (double x) { return sqrt	(x);}
+static double tan_		 (double x) { return tan	(x);}
+static double tanh_		 (double x) { return tanh	(x);}
+static double fmod_      (double x, double y) { return fmod(x, y); }
+
 
 static const te_variable functions[] = {
 	/* must be in alphabetical order */
-	{"abs",   {fabs},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"acos",  {acos},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"asin",  {asin},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"atan",  {atan},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"atan2", {atan2},  TE_FUNCTION2 | TE_FLAG_PURE, 0},
-	{"ceil",  {ceil_},  TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"cos",   {cos},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"cosh",  {cosh},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"e",     {e},      TE_FUNCTION0 | TE_FLAG_PURE, 0},
-	{"exp",   {exp},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"fac",   {fac},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"floor", {floor_}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"ln",    {log},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"abs",   {(void*) fabs_},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"acos",  {(void*) acos_},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"asin",  {(void*) asin_},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"atan",  {(void*) atan_},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"atan2", {(void*) atan2_},  TE_FUNCTION2 | TE_FLAG_PURE, 0},
+	{"ceil",  {(void*) ceil_},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"cos",   {(void*) cos_},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"cosh",  {(void*) cosh_},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"e",     {(void*) e_},      TE_FUNCTION0 | TE_FLAG_PURE, 0},
+	{"exp",   {(void*) exp_},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"fac",   {(void*) fac_},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"floor", {(void*) floor_},  TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"ln",    {(void*) log_},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
 #ifdef TE_NAT_LOG
-	{"log",   {log},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"log",   {(void*) log_},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
 #else
-	{"log",   {log10},  TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"log",   {(void*) log10_},  TE_FUNCTION1 | TE_FLAG_PURE, 0},
 #endif
-	{"log10", {log10},  TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"ncr",   {ncr},    TE_FUNCTION2 | TE_FLAG_PURE, 0},
-	{"npr",   {npr},    TE_FUNCTION2 | TE_FLAG_PURE, 0},
-	{"pi",    {pi},     TE_FUNCTION0 | TE_FLAG_PURE, 0},
-	{"pow",   {pow},    TE_FUNCTION2 | TE_FLAG_PURE, 0},
-	{"sin",   {sin},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"sinh",  {sinh},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"sqrt",  {sqrt},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"tan",   {tan},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
-	{"tanh",  {tanh},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"log10", {(void*) log10_},  TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"ncr",   {(void*) ncr_},    TE_FUNCTION2 | TE_FLAG_PURE, 0},
+	{"npr",   {(void*) npr_},    TE_FUNCTION2 | TE_FLAG_PURE, 0},
+	{"pi",    {(void*) pi_},     TE_FUNCTION0 | TE_FLAG_PURE, 0},
+	{"pow",   {(void*) pow_},    TE_FUNCTION2 | TE_FLAG_PURE, 0},
+	{"sin",   {(void*) sin_},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"sinh",  {(void*) sinh_},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"sqrt",  {(void*) sqrt_},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"tan",   {(void*) tan_},    TE_FUNCTION1 | TE_FLAG_PURE, 0},
+	{"tanh",  {(void*) tanh_},   TE_FUNCTION1 | TE_FLAG_PURE, 0},
 	{0, {0}, 0, 0}
 };
 
@@ -312,8 +335,8 @@ static void next_token(state* s) {
 				case '-': s->type = TOK_INFIX; s->v.f.f2 = sub; break;
 				case '*': s->type = TOK_INFIX; s->v.f.f2 = mul; break;
 				case '/': s->type = TOK_INFIX; s->v.f.f2 = divide; break;
-				case '^': s->type = TOK_INFIX; s->v.f.f2 = pow; break;
-				case '%': s->type = TOK_INFIX; s->v.f.f2 = fmod; break;
+				case '^': s->type = TOK_INFIX; s->v.f.f2 = pow_; break;
+				case '%': s->type = TOK_INFIX; s->v.f.f2 = fmod_; break;
 				case '(': s->type = TOK_OPEN; break;
 				case ')': s->type = TOK_CLOSE; break;
 				case ',': s->type = TOK_SEP; break;
@@ -465,7 +488,7 @@ static te_expr* factor(state* s) {
 		neg = 1;
 	}
 
-	while (s->type == TOK_INFIX && (s->v.f.f2 == pow)) {
+	while (s->type == TOK_INFIX && (s->v.f.f2 == pow_)) {
 		te_fun2 t = s->v.f.f2;
 		next_token(s);
 
@@ -495,7 +518,7 @@ static te_expr* factor(state* s) {
 	/* <factor>    =    <power> {"^" <power>} */
 	te_expr* ret = power(s);
 
-	while (s->type == TOK_INFIX && (s->v.f.f2 == pow)) {
+	while (s->type == TOK_INFIX && (s->v.f.f2 == pow_)) {
 		te_fun2 t = s->v.f.f2;
 		next_token(s);
 		ret = new_expr2(TE_FUNCTION2 | TE_FLAG_PURE, ret, power(s));
@@ -512,7 +535,7 @@ static te_expr* term(state* s) {
 	/* <term>      =    <factor> {("*" | "/" | "%") <factor>} */
 	te_expr* ret = factor(s);
 
-	while (s->type == TOK_INFIX && (s->v.f.f2 == mul || s->v.f.f2 == divide || s->v.f.f2 == fmod)) {
+	while (s->type == TOK_INFIX && (s->v.f.f2 == mul || s->v.f.f2 == divide || s->v.f.f2 == fmod_)) {
 		te_fun2 t = s->v.f.f2;
 		next_token(s);
 		ret = new_expr2(TE_FUNCTION2 | TE_FLAG_PURE, ret, factor(s));
